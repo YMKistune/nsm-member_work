@@ -1,0 +1,89 @@
+NSM MEMBER CLUB — แผนผังการเชื่อมโยงระบบ
+========================================
+
+A. เส้นทางหลัก
+
+Dashboard
+- URL: dashboard.php
+- แหล่งข้อมูลสมาชิก: excel_member_records + excel_import_batches
+- แสดง: รายการทั้งหมด, สมัครใหม่/ต่ออายุ, ยอดสุทธิ (ชั่วคราว), แยกหมวด, เปรียบเทียบ 3 ปี, ตารางรายเดือน
+- ข้อมูลพนักงาน: employee_work_records + employees + positions + buildings
+- ข้อกำหนด: ตัวเลขพนักงานแสดงเป็นส่วนแยก ไม่รวมในยอดสมาชิก
+- dashboard_excel.php เป็น URL เดิมที่เปลี่ยนเส้นทางไป dashboard.php เท่านั้น
+
+นำเข้า Excel
+- URL: excel_import.php
+- อ่านไฟล์: config/excel_import.php
+- ตาราง: excel_import_batches, excel_member_records, excel_dynamic_columns
+- งาน: ตรวจไฟล์ซ้ำด้วย SHA-256, อ่าน Sheet แรก, เก็บหัวข้อหลักและหัวข้อใหม่, แยกหมวด, เก็บประวัติ Batch
+- หลังนำเข้า: ตรวจหัวข้อใหม่ที่ excel_fields.php และตรวจรายการที่ยังไม่จัดหมวดที่ member_categories.php
+
+หน้าข้อมูลสมาชิก 3 ส่วน
+- สมัครที่ อพ.: member_ap.php → section_data_page.php โดยตั้ง section=ap
+- สมัครออนไลน์: member_online_data.php → section_data_page.php โดยตั้ง section=online
+- ออกบูธ: member_booth.php → section_data_page.php โดยตั้ง section=booth
+- ทั้งสามหน้าใช้โค้ดตาราง/ตัวกรองร่วมกัน แต่คง URL แยกให้เมนูเข้าใจง่าย
+- หัวข้อ dynamic: ค่าจาก extra_data; ควบคุมการแสดงผล/ตัวกรองที่ excel_fields.php
+
+ตรวจสอบและวิเคราะห์ข้อมูล
+- data_sources.php: เปรียบเทียบ 3 ส่วนที่เลือก
+- member_categories.php: สรุปจำนวนหมวดและเปลี่ยนหมวดรายการที่ยังไม่ชัดเจนได้ โดยแก้เฉพาะ source_section ไม่แก้คอลัมน์ข้อมูล Excel
+- member_active.php: วิเคราะห์สถานะ/วันหมดอายุตามกติกาที่แจ้งในหน้า
+- member_museum_rights.php: รายการสมาชิก/สถานที่เกี่ยวข้องกับพิพิธภัณฑ์ ไม่ใช่จำนวนเข้าใช้สิทธิ์จริง
+- member_lounge.php: รายการ POS Lounge ไม่ใช่จำนวนเข้าใช้ Lounge จริง
+- outdoor_booth.php: กิจกรรม/สถานที่ที่ถูกจัดอยู่ในหมวดออกบูธ
+- monthly_promotions.php: รายการที่มีส่วนลดหรือบัตรกำนัลเท่านั้น
+- reports.php: รายงาน Excel และรายงานพนักงานแยกส่วน รวมถึงหัวข้อ dynamic ที่เปิดใช้รายงาน/กราฟ
+
+หัวข้อ Excel ใหม่
+- excel_fields.php: เพิ่ม/ไม่ใช้งานหัวข้อที่พบใหม่, เลือกขอบเขตหมวด, เปิดแสดงในตาราง/ตัวกรอง/รายงาน/กราฟ
+- includes_excel_data.php: สร้าง/อัปเกรดตารางแบบเพิ่มอย่างเดียว และกำหนดรายชื่อหัวข้อหลักที่รู้จัก
+- config/excel_import.php: อ่าน XLSX และจำแนกแถวตามช่องทาง/POS/สถานที่/หมายเหตุ
+- ถ้าจัดหมวดอัตโนมัติไม่ชัดเจน: ใช้ member_categories.php เพื่อตรวจรายการ Unknown
+
+งานพนักงาน (แยกจากสมาชิก)
+- employees.php: จัดการรายชื่อพนักงาน
+- work_record.php: บันทึกการปฏิบัติงาน
+- performance.php: วิเคราะห์ผลงาน/KPI
+- ตารางหลัก: employees, employee_work_records, positions, buildings
+- รายงานพนักงานแสดงแยก ไม่ถูกบวกเข้ากับรายการสมาชิกหรือยอดสุทธิ Excel
+
+การตั้งค่าระบบเดิม
+- settings.php: ตั้งค่าระบบ/เป้าหมายและค่าที่มีอยู่เดิม
+- member_prices.php: หน้าราคาสำหรับโมดูลบันทึกสมาชิกแบบเดิม เก็บไว้ในกลุ่มตั้งค่าและติดป้ายว่าเป็นระบบเดิม; ไม่ได้ใช้คำนวณยอดจาก Excel
+- member_statistics.php และ member_online.php: URL เดิมที่เปลี่ยนเส้นทางไปหน้าข้อมูล Excel; โค้ดเดิมเก็บใน _archive_reference/
+
+B. แผนผังฐานข้อมูล
+
+ข้อมูลนำเข้า Excel
+excel_import_batches (1) ── (หลายแถว) excel_member_records
+excel_member_records.extra_data ── JSON เก็บค่าจากหัวข้อที่ระบบยังไม่รู้จัก
+excel_dynamic_columns ── การตั้งค่าหัวข้อใหม่/ขอบเขต/การแสดงผล
+
+งานพนักงาน
+employees / positions / buildings ── employee_work_records
+
+โมดูลเดิมที่คงไว้เพื่อรักษาข้อมูล
+projects ── revenue_targets ── revenue_target_history
+member_input_items ── member_monthly_entries / member_monthly_notes
+member_online_monthly_entries / member_online_monthly_notes
+
+C. SQL ที่ใช้งาน
+- ติดตั้งใหม่: sql/nsm_member_complete_setup.sql
+- ฐานข้อมูลเดิมที่ยังไม่มีตาราง Excel: sql/excel_data_import.sql
+- เพิ่ม/อัปเกรดหัวข้อ dynamic และตารางออนไลน์เดิมที่ขาด: sql/migration_dynamic_excel_headers.sql
+- SQL dump รุ่นเก่าอยู่ใน _archive_reference/sql_snapshots/ เพื่ออ้างอิง ไม่ใช่ไฟล์ที่ระบบเปิดใช้
+
+D. จุดที่ต้องตรวจเมื่อบริษัทเปลี่ยน Excel
+1. ตรวจชื่อหัวตารางและวันที่/ยอดเงินในไฟล์
+2. นำเข้าไฟล์หนึ่งครั้ง
+3. ตรวจจำนวนแถวใน Batch เทียบกับจำนวนแถวที่ไม่ว่างใน Excel
+4. ตรวจรายการ Unknown และแก้หมวดถ้าจำเป็น
+5. ตรวจยอดสุทธิเทียบกับ Excel/ฝ่ายบัญชี ก่อนใช้เป็นตัวเลขทางการ
+6. ตั้งค่าหัวข้อใหม่ที่ต้องแสดงในตาราง/ตัวกรอง/รายงาน/กราฟ
+
+E. ข้อจำกัดที่ต้องยืนยัน
+- นิยามรายได้ทางการและความหมายของ “ยอดสุทธิ” ต้องยืนยันกับบริษัท
+- นิยาม Active ต้องยืนยันกับบริษัท
+- การใช้สิทธิ์พิพิธภัณฑ์/Member Lounge จริงต้องมีข้อมูลบันทึกการใช้สิทธิ์ ไม่สามารถสรุปจาก POS/สถานที่สมัครเพียงอย่างเดียว
+- ต้องทดสอบ Import และทุกหน้าใน XAMPP/MySQL จริงก่อนใช้ฐานข้อมูลบริษัท
